@@ -101,5 +101,18 @@ int main(int argc, char** argv)
     double resolved = (double)functionSignatures.size() / importedFunctions.size() * 100;
     printf("\nResolved %zd out of %zd function signatures (%.2f%%)\n", functionSignatures.size(), importedFunctions.size(), resolved);
 
+    // Write all function signatures to a file using fopen_s
+    FILE* file;
+    errno_t err = fopen_s(&file, "function_signatures.txt", "w");
+    if (err != 0) {
+		printf("Failed to open file for writing\n");
+		return 1;
+	}
+    // Write to file
+    for (const auto& signature : functionSignatures) {
+		fprintf(file, "%s\n", signature.c_str());
+	}
+    fclose(file);
+
     return 0;
 }
