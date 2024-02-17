@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Windows.h>
-#include <detours.h>
+#include <detours/detours.h>
 #include <stdio.h>
 #include <strsafe.h>
 #include <string>

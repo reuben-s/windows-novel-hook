@@ -1,6 +1,9 @@
+#include <cmath>
+
 #include "dumpi.h"
 #include "Http.h"
 #include "HtmlParser.h"
+#include "CodeParser.h"
 
 BOOL ResolveDocsLinks(Http* http, std::string symbol, std::vector<std::string>& buf)
 {
@@ -21,11 +24,26 @@ BOOL ResolveDocsLinks(Http* http, std::string symbol, std::vector<std::string>& 
 	return TRUE;
 }
 
-int main(int argc, char** argv)
+void RenderProgressBar(int progress, int total, const char* currentTask)
 {
-    // Calculate time taken to resolve function signatures
-    
+    int barWidth = 40;
+    float progressRatio = (float)progress / total;
+    float pos = std::round(barWidth * progressRatio);
 
+    printf("\r%*s\r", barWidth + 50, ""); // Clear the line
+
+    printf("\r[");
+    for (int i = 0; i < barWidth; ++i) {
+        if (i <= pos) printf("=");
+        else printf(" ");
+    }
+    printf("] %d%% | (%i/%i) | %s", (int)(progressRatio * 100.0), progress, total, currentTask);
+
+    fflush(stdout);
+}
+
+int main(int argc, char** argv)
+{    
     if (argc < 2) {
         printf("Usage: %s <path>\n", argv[0]);
         return 1;
@@ -39,28 +57,24 @@ int main(int argc, char** argv)
     if (!DimpFile(path, importedFunctions))
         return 1;
 
-    printf("Found following functions:\n");
-    for (const auto& func : importedFunctions) {
-        printf("\t%s::%s\n", func->File.c_str(), func->Symbol.c_str()); // Note: Use c_str() to print std::string
-    }
+    printf("Resolving function signatures for %s ...\n", path);
 
     std::vector<std::string> functionSignatures;
     Http* http = new Http();
 
-    int count = 1;
+    int count = 0;
     for (const auto& func : importedFunctions) {
+        count++;
 
-        //if (count > 1) break; // Only process the first function (for now)
-
-		printf("\nAttempting to resolve function signature for %s ...\n", func->Symbol.c_str());
-        printf("Fetching documentation ... \n");
+        RenderProgressBar(static_cast<int>(count), static_cast<int>(importedFunctions.size()), func->Symbol.c_str());
+		//printf("\nAttempting to resolve function signature for %s ...\n", func->Symbol.c_str());
+        //printf("Fetching documentation ... \n");
 
         std::vector<std::string> links;
         if (!ResolveDocsLinks(http, func->Symbol, links)) continue;
-        printf("Found %zd documentation links\n", links.size());
+        //printf("Found %zd documentation links\n", links.size());
 
-
-        printf("Fetching function signature ... \n");
+        //printf("Fetching function signature ... \n");
         
         bool found = false;
         for (const auto& link : links) {
@@ -68,20 +82,20 @@ int main(int argc, char** argv)
             std::string codeElement = GetFirstCodeElement(html);
 
             if (!codeElement.empty()) {
+                FunctionSignature signature = ParseFunctionSignature(codeElement);
+
+                if (signature.functionName != func->Symbol) {
+					//printf("Function name mismatch.\n");
+					continue;
+				}
+
                 functionSignatures.push_back(codeElement);
-                printf("Resolved %s function signature!\n", func->Symbol.c_str());
+
+                //printf("Resolved function signature for %s!\n", signature.functionName.c_str());
                 found = true;
                 break; // We only need the first code snippet
             }
         }
-        if (!found)
-            printf("Failed to resolve %s function signature\n", func->Symbol.c_str());
-        else
-            count++;
-	}
-
-    for (const auto& signature : functionSignatures) {
-		printf("\n%s\n", signature.c_str());
 	}
 
     double resolved = (double)functionSignatures.size() / importedFunctions.size() * 100;
