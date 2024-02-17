@@ -13,5 +13,8 @@ This solution works however it is certainly novel and not completely reliable at
 - [Gumbo](https://github.com/google/gumbo-parser): An HTML5 parsing library in pure C99.
 - [CURL](https://curl.haxx.se/libcurl/): A free and easy-to-use client-side URL transfer library.
 - [Detours](https://github.com/microsoft/Detours): A software package for monitoring and instrumenting API calls on Windows.
+- [LLVM](https://github.com/llvm/llvm-project): A collection of modular and reusable compiler and toolchain technologies.
 
+<!---
 I use vcpkg to download my packages. For visual studio I recommend running the `vcpkg integrate install` command.
+---!>
